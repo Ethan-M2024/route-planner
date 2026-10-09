@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Route Planner · elevation, wind, water and fuel for your ride</title>
+  <meta name="description" content="Upload a GPX bike route and get an elevation profile, ride day weather, wind along the route, and a water and carb plan by mile.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+        <path d="M2 26 L10 14 L15 20 L21 8 L30 26 Z" fill="#E65100"/>
+        <path d="M2 26 L10 14 L15 20 L21 8 L30 26" fill="none" stroke="#14181f" stroke-width="2.2" stroke-linejoin="round"/>
+      </svg>
+      <span>Route Planner</span>
+    </a>
+    <a class="gh" href="https://github.com/Ethan-M2024/route-planner" target="_blank" rel="noopener">GitHub</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Know the ride before you ride it.</h1>
+      <p>Drop in the GPX file for a route you built. You get the climbs, the ride day weather, where the wind will hit you, and exactly when to finish each bottle and eat.</p>
+    </section>
+
+    <section class="card setup">
+      <label class="drop" id="drop" for="file">
+        <input type="file" id="file" accept=".gpx,application/gpx+xml" hidden>
+        <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 16V4m0 0l-5 5m5-5l5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="drop-main" id="dropText">Drop a .gpx file here or click to browse</span>
+        <span class="drop-sub">Works with Strava, Ride with GPS, Komoot and Garmin exports. Your file never leaves your browser.</span>
+      </label>
+      <button class="link" id="sample" type="button">No file handy? Try a sample route (Boulder, Ward and Nederland loop)</button>
+
+      <div class="fields">
+        <label>Ride date<input type="date" id="date"></label>
+        <label>Start time<input type="time" id="time" value="08:00"></label>
+        <label><span>Flat ground speed (<span class="u-speed">mph</span>)</span><input type="number" id="speed" min="5" max="50" step="0.5" value="16"></label>
+        <label>Sweat rate
+          <select id="sweat">
+            <option value="low">Light sweater</option>
+            <option value="avg" selected>Average</option>
+            <option value="high">Heavy sweater</option>
+          </select>
+        </label>
+        <label>Carbs per hour
+          <select id="carbs">
+            <option value="auto" selected>Auto (by ride length)</option>
+            <option value="30">30 g</option>
+            <option value="45">45 g</option>
+            <option value="60">60 g</option>
+            <option value="75">75 g</option>
+            <option value="90">90 g</option>
+          </select>
+        </label>
+        <label><span>Bottle size (<span class="u-vol">oz</span>)</span><input type="number" id="bottle" min="8" max="1500" step="1" value="24"></label>
+        <div class="units">
+          <span>Units</span>
+          <div class="seg" role="group" aria-label="Units">
+            <button type="button" data-units="imperial" class="on">Miles</button>
+            <button type="button" data-units="metric">Km</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="primary" id="go" type="button" disabled>Plan my ride</button>
+      <p class="status" id="status" role="status"></p>
+    </section>
+
+    <section id="results" hidden>
+      <div class="stats" id="stats"></div>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Elevation profile</h2>
+          <div class="actions">
+            <label class="check"><input type="checkbox" id="showPlan" checked> Water and fuel markers</label>
+            <button class="ghost" id="dlProfile" type="button">Download PNG</button>
+          </div>
+        </div>
+        <div class="profile-wrap" id="profileWrap">
+          <canvas id="profile" aria-label="Elevation profile colored by gradient"></canvas>
+          <div class="hover-line" id="hoverLine" hidden></div>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <div class="climbs" id="climbs"></div>
+      </section>
+
+      <section class="wx-card" id="weather">
+        <div class="wx-bar">
+          <button class="icon" id="wxBack" type="button" aria-label="Back to top">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="wx-title">
+            <strong>Ride Weather</strong>
+            <span id="wxSub"></span>
+          </div>
+          <button class="icon" id="wxMenu" type="button" aria-label="Download wind chart">
+            <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+          </button>
+        </div>
+        <div class="wx-notice" id="wxNotice" hidden></div>
+        <div class="wx-tiles" id="wxTiles"></div>
+
+        <div class="wx-module">
+          <h3>Wind along your ride</h3>
+          <canvas id="windChart" aria-label="Wind speed over the ride"></canvas>
+          <div class="strip-head">
+            <span>What the wind does to you, by distance</span>
+            <span class="keys">
+              <i class="k head"></i>Headwind <i class="k cross"></i>Crosswind <i class="k tail"></i>Tailwind <i class="k calm"></i>Calm
+            </span>
+          </div>
+          <canvas id="windStrip" aria-label="Headwind and tailwind by distance"></canvas>
+          <p class="wind-summary" id="windSummary"></p>
+        </div>
+
+        <div class="wx-module">
+          <div class="map-head">
+            <h3>Route and wind direction</h3>
+            <div class="seg" role="group" aria-label="Route color">
+              <button type="button" data-color="red" class="on">Route</button>
+              <button type="button" data-color="wind">Wind effect</button>
+            </div>
+          </div>
+          <div id="map"></div>
+          <p class="fine">Arrows point the way the wind blows when you reach that spot. Numbers are wind speed.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Water and fuel plan</h2></div>
+        <div class="plan-grid">
+          <div id="waterPlan"></div>
+          <div id="fuelPlan"></div>
+        </div>
+        <p class="fine">General endurance guidelines, not medical advice. Heat, effort, body size and gut training change your real needs, so adjust after a few rides.</p>
+      </section>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>. Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.</span>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
