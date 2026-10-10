@@ -53,6 +53,8 @@ function loadText(text, name) {
 
 $('file').addEventListener('change', async e => {
   const f = e.target.files[0];
+  // Reset so picking the same file again still fires change.
+  e.target.value = '';
   if (f && loadText(await f.text(), f.name)) run();
 });
 
