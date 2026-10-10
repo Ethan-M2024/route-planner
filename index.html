@@ -93,6 +93,46 @@
         <div class="climbs" id="climbs"></div>
       </section>
 
+      <section class="card" id="preview">
+        <div class="card-head">
+          <h2>Ride preview</h2>
+          <div class="actions">
+            <div class="seg" role="group" aria-label="View">
+              <button type="button" data-view="3d" class="on">3D</button>
+              <button type="button" data-view="2d">2D</button>
+            </div>
+            <div class="seg" role="group" aria-label="Imagery">
+              <button type="button" data-base="sat" class="on">Satellite</button>
+              <button type="button" data-base="osm">Map</button>
+            </div>
+          </div>
+        </div>
+        <div class="fly-wrap">
+          <div id="fly"></div>
+          <div class="hud" id="hud"></div>
+          <div class="fly-next" id="flyNext" hidden></div>
+          <div class="fly-msg" id="flyMsg">Loading 3D terrain...</div>
+        </div>
+        <div class="fly-controls">
+          <button class="play" id="flyPlay" type="button" aria-label="Play">
+            <svg class="i-play" viewBox="0 0 24 24" width="20" height="20"><path d="M7 4.5L20 12L7 19.5Z" fill="currentColor"/></svg>
+            <svg class="i-pause" viewBox="0 0 24 24" width="20" height="20"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z" fill="currentColor"/></svg>
+          </button>
+          <div class="scrub">
+            <canvas id="flyProfile"></canvas>
+            <input type="range" id="flyScrub" min="0" max="1000" value="0" step="1" aria-label="Position along the route">
+          </div>
+          <select id="flySpeed" aria-label="Playback speed">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+          </select>
+          <button class="ghost" id="flyOverview" type="button">Overview</button>
+        </div>
+        <p class="fine">Press play to fly the route. Drag the map to look around, or drag along the profile to jump ahead. Terrain is exaggerated a little so climbs read clearly.</p>
+      </section>
+
       <section class="wx-card" id="weather">
         <div class="wx-bar">
           <button class="icon" id="wxBack" type="button" aria-label="Back to top">
@@ -147,7 +187,7 @@
   </main>
 
   <footer class="foot">
-    <span>Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>. Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.</span>
+    <span>Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>. Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Imagery © Esri. Terrain from AWS Open Data.</span>
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

@@ -3,6 +3,7 @@ import { parseGPX, analyzeRoute } from './route.js';
 import { weatherStations, fetchWeather, conditionsAlong, weatherText } from './weather.js';
 import { estimateTimes, buildPlan } from './plan.js';
 import { drawProfile, W as PW, P as PP } from './profile.js';
+import { createFlyover } from './flyover.js';
 import { drawWindChart, drawWindStrip, createMap, renderMap, setMapHover, compass } from './windviz.js';
 
 const $ = id => document.getElementById(id);
@@ -200,10 +201,18 @@ const latlngAt = km => {
   return [route.lat[i], route.lon[i]];
 };
 
+const flyover = createFlyover({
+  map: $('fly'), hud: $('hud'), next: $('flyNext'), msg: $('flyMsg'),
+  play: $('flyPlay'), scrub: $('flyScrub'), mini: $('flyProfile'), speed: $('flySpeed'), overview: $('flyOverview'),
+  viewBtns: document.querySelectorAll('[data-view]'), baseBtns: document.querySelectorAll('[data-base]'),
+});
+
 function render() {
   renderStats();
   drawProfileView();
   renderClimbs();
+  const { route, times, cond, plan } = state.result;
+  flyover.update({ route, times, cond, plan, U: U(), clock, distWord });
   renderWeather();
   renderPlan();
 }
@@ -224,7 +233,7 @@ function renderStats() {
   const tiles = [
     ['Distance', `${fmt(u.dist(route.totalKm), 1)} ${u.distL}`],
     ['Elevation gain', `${fmt(u.ele(route.gainM))} ${u.eleL}`, `High point ${fmt(u.ele(route.maxEle))} ${u.eleL}`],
-    ['Moving time', fmtDuration(plan.totalSec), `About ${fmt(avg, 1)} ${u.speedL} average`],
+    ['Moving time', fmtDuration(plan.totalSec), `Conservative, ${fmt(avg, 1)} ${u.speedL} average`],
     ['Finish around', clock(plan.totalSec), `Rolling out ${clock(0)}`],
   ];
   if (cond) {

@@ -2,12 +2,15 @@
 
 import { interpAt } from './util.js';
 
-// Speed on a given grade relative to flat ground speed. Climbs slow you sharply; descents cap out.
-function speedFor(grade, flatKmh, headKmh) {
+// Conservative speed on a given grade. It is better to finish early than to run out of water.
+// Climbs cost a lot, descents give back little, headwinds hurt but tailwinds earn no credit,
+// and legs fade after two hours.
+function speedFor(grade, flatKmh, headKmh, hoursIn) {
   let v = grade > 0
-    ? flatKmh / (1 + 0.11 * grade)
-    : Math.min(flatKmh * (1 + 0.045 * -grade), flatKmh * 1.65, 60);
-  if (headKmh) v -= 0.3 * headKmh;
+    ? flatKmh / (1 + 0.14 * grade)
+    : Math.min(flatKmh * (1 + 0.03 * -grade), flatKmh * 1.4, 50);
+  if (headKmh > 0) v -= 0.4 * headKmh;
+  v *= 1 - Math.min(0.12, Math.max(0, hoursIn - 2) * 0.03);
   return Math.max(v, 4, flatKmh * 0.25);
 }
 
@@ -17,7 +20,7 @@ export function estimateTimes(route, flatKmh, head) {
   for (let i = 1; i < route.d.length; i++) {
     const g = (route.grade[i - 1] + route.grade[i]) / 2;
     const h = head ? (head[i - 1] + head[i]) / 2 : 0;
-    t.push(t[i - 1] + (route.d[i] - route.d[i - 1]) / speedFor(g, flatKmh, h) * 3600);
+    t.push(t[i - 1] + (route.d[i] - route.d[i - 1]) / speedFor(g, flatKmh, h, t[i - 1] / 3600) * 3600);
   }
   return t;
 }
